@@ -5,5 +5,5 @@ datasets
 #models saved after training
 models
 
-explanations/*.html
+explanations/
 
