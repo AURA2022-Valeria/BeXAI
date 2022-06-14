@@ -9,8 +9,10 @@ from lime import lime_tabular
 import pickle
 import os
 import shap
+import time
 
 
+#class Dataset(): #abstract class
 
 # class RegressionDataset(Dataset):
 
@@ -61,24 +63,41 @@ class Classification_Dataset:
 
         
     def get_explanations(self):
+        #TODO: modularize the time measurement 
+        #TODO: Should graph representation be included in time measurements?
         index_to_explain = 10
-        
+        timer = {
+            "lime" : {},
+            "shap" : {},
+            "anchor" : {},
+        }
+
         if self.type == "Tabular":
             row_to_explain = self.X_test.iloc[index_to_explain]
-
+           
             #lime explanation
             lime_explainer = lime_tabular.LimeTabularExplainer(self.X_train.values,class_names=self.class_names,feature_names=self.feature_names,discretize_continuous=True)
             for label,model in self.models.items():
+                start = time.time()
                 exp = lime_explainer.explain_instance(row_to_explain.values, model.predict_proba,top_labels=1)
+                feature_weight = exp.as_map()
+                end = time.time()
+                timer["lime"][f'{self.dataset_name} - {label}'] = end - start
+
                 path = f'Explanations/{self.dataset_name}'
                 if not os.path.exists(path):
                     os.makedirs(path)
                 exp.save_to_file(f'{path}/lime_{label}.html')
+        
 
             #shap explanation
             k_explainer = shap.KernelExplainer(model.predict_proba, self.X_train)
             for label,model in self.models.items():
+                start = time.time()
                 shap_values = k_explainer.shap_values(row_to_explain)
+                end = time.time()
+                timer["shap"][f'{self.dataset_name} - {label}'] = end - start
+
                 path = f'Explanations/{self.dataset_name}'
                 if not os.path.exists(path):
                     os.makedirs(path)
@@ -86,7 +105,7 @@ class Classification_Dataset:
                 figure = shap.force_plot(k_explainer.expected_value[1], shap_values[1], row_to_explain,matplotlib = True, show = False)
                 figure.savefig(f'{path}/shap_{label}.png')
 
-
+        return timer
             
             
             

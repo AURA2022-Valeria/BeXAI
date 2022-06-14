@@ -15,6 +15,6 @@ iris_features = list(data.columns)
 prediction_feature = "variety"
 iris_features.remove(prediction_feature)
 iris_dataset = Classification_Dataset(dataset_name="iris",X=data[iris_features],Y=data[prediction_feature],type="Tabular",feature_names=iris_features,class_names=iris_class_names)
-iris_dataset.get_explanations()
+iris_timer = iris_dataset.get_explanations()
 
-#
+print(iris_timer)

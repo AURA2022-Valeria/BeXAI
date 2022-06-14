@@ -37089,10 +37089,10 @@
 /***/ })
 /******/ ]);
 //# sourceMappingURL=bundle.js.map </script></head><body>
-        <div class="lime top_div" id="top_divPR1O3CJYOU8GUN8"></div>
+        <div class="lime top_div" id="top_divWMTQOMUF9NDPING"></div>
         
         <script>
-        var top_div = d3.select('#top_divPR1O3CJYOU8GUN8').classed('lime top_div', true);
+        var top_div = d3.select('#top_divWMTQOMUF9NDPING').classed('lime top_div', true);
         
             var pp_div = top_div.append('div')
                                 .classed('lime predict_proba', true);
@@ -37104,10 +37104,10 @@
             var exp = new lime.Explanation(["Setosa", "Versicolor", "Virginica"]);
         
                 exp_div = top_div.append('div').classed('lime explanation', true);
-                exp.show([["petal.length > 5.20", 0.41474252936444644], ["1.30 < petal.width <= 1.90", 0.06565280253353234], ["sepal.width <= 2.80", 0.023548714838476065], ["5.80 < sepal.length <= 6.50", 0.010597012955252857]], 2, exp_div);
+                exp.show([["petal.length > 5.20", 0.4021808424400121], ["1.30 < petal.width <= 1.90", 0.0673457675962046], ["5.80 < sepal.length <= 6.50", 0.0244984124053757], ["sepal.width <= 2.80", 0.018612058376959062]], 2, exp_div);
                 
         var raw_div = top_div.append('div');
-            exp.show_raw_tabular([["petal.length", "5.60", 0.41474252936444644], ["petal.width", "1.40", 0.06565280253353234], ["sepal.width", "2.60", 0.023548714838476065], ["sepal.length", "6.10", 0.010597012955252857]], 2, raw_div);
+            exp.show_raw_tabular([["petal.length", "5.60", 0.4021808424400121], ["petal.width", "1.40", 0.0673457675962046], ["sepal.length", "6.10", 0.0244984124053757], ["sepal.width", "2.60", 0.018612058376959062]], 2, raw_div);
         
         </script>
         </body></html>
