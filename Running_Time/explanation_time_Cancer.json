@@ -1,0 +1,17 @@
+{
+    "lime": {
+        "Cancer - random_forest": 4.187664583,
+        "Cancer - knn": 4.275366292,
+        "Cancer - decision_tree": 4.182555125,
+        "Cancer - xgboost": 4.235726540999998
+    },
+    "shap": {
+        "Cancer - random_forest": 1.5991895420000013,
+        "Cancer - knn": 1.5294368329999983,
+        "Cancer - decision_tree": 1.5214520830000033,
+        "Cancer - xgboost": 1.5292469590000017
+    },
+    "anchor": {
+        
+    }
+}
