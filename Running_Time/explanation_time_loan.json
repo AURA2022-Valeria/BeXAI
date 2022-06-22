@@ -1,0 +1,20 @@
+{
+    "lime": {
+        "loan - random_forest": 0.6932306250000002,
+        "loan - knn": 1.0647293330000003,
+        "loan - decision_tree": 0.7924469999999997,
+        "loan - xgboost": 0.7716791660000002
+    },
+    "shap": {
+        "loan - random_forest": 5.360321042,
+        "loan - knn": 2.1650869999999998,
+        "loan - decision_tree": 1.673797125,
+        "loan - xgboost": 2.0855412080000004
+    },
+    "anchor": {
+        "loan - random_forest": 0.34821895800000036,
+        "loan - knn": 0.338657125000001,
+        "loan - decision_tree": 0.2479175830000031,
+        "loan - xgboost": 0.15336149999999904
+    }
+}

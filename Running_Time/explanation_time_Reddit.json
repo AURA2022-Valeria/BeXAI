@@ -1,1 +1,11 @@
-{"lime": {"Reddit - random_forest": 0.6070017919999984, "Reddit - knn": 1.756505458999996, "Reddit - decision_tree": 1.4331572500000007, "Reddit - xgboost": 0.7689103750000044}, "shap": {}, "anchor": {}}
+{
+    "lime": {},
+    "shap": {
+        "Reddit - random_forest": 16.645963041999998,
+        "Reddit - knn": 22.839247875000005,
+        "Reddit - decision_tree": 7.133393749999996,
+        "Reddit - xgboost": 5.377782084000003
+    },
+    "anchor": {},
+    "shap_sampling_time": 38.800846375
+}

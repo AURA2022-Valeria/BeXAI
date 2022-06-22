@@ -1,17 +1,1 @@
-{
-    "lime": {
-        "Cancer - random_forest": 4.187664583,
-        "Cancer - knn": 4.275366292,
-        "Cancer - decision_tree": 4.182555125,
-        "Cancer - xgboost": 4.235726540999998
-    },
-    "shap": {
-        "Cancer - random_forest": 1.5991895420000013,
-        "Cancer - knn": 1.5294368329999983,
-        "Cancer - decision_tree": 1.5214520830000033,
-        "Cancer - xgboost": 1.5292469590000017
-    },
-    "anchor": {
-        
-    }
-}
+{"lime": {"Cancer - random_forest": 4.123360625, "Cancer - knn": 4.261901291999999, "Cancer - decision_tree": 4.213376458999999, "Cancer - xgboost": 4.226241833000001}, "shap": {"Cancer - random_forest": 3.3879654579999965, "Cancer - knn": 1.7324986670000015, "Cancer - decision_tree": 1.421280375000002, "Cancer - xgboost": 1.5625454580000024}, "anchor": {"Cancer - random_forest": 5.351004041999996, "Cancer - knn": 0.8353388749999979, "Cancer - decision_tree": 0.8647600830000002, "Cancer - xgboost": 2.221343707999999}}
