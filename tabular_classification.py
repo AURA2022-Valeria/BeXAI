@@ -60,7 +60,7 @@ class TabularClassification(Classification):
         super().__init__(dataset_name,X,Y,class_names)
 
         #number of records to explain when measureing time
-        self.n = min(500,self.X_test.shape[0])
+        self.n = min(100,self.X_test.shape[0])
 
         #pipeline using the encoder and ml_algorithms 
         self.pipelines = {}
