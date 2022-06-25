@@ -26,7 +26,7 @@ import pickle
 import os
 import time
 
-from dataset import Classification
+from classification import Classification
 
 class TabularClassification(Classification):
     #TODO : divide the class to regreesion and classification datasets 

@@ -26,7 +26,7 @@ import pickle
 import os
 import time
 
-from dataset import Classification
+from classification import Classification
 
 class TextClassification(Classification):
     def __init__(self,dataset_name,X,Y,class_names):
