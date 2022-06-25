@@ -60,7 +60,7 @@ class TabularClassification(Classification):
         super().__init__(dataset_name,X,Y,class_names)
 
         #number of records to explain when measureing time
-        self.n = min(100,self.X_test.shape[0])
+        self.n = min(200,self.X_test.shape[0])
 
         #pipeline using the encoder and ml_algorithms 
         self.pipelines = {}
@@ -206,6 +206,7 @@ class TabularClassification(Classification):
     
 
     def get_average_explanation_lime(self):
+        # print("lime")
         lime_explainer = lime_tabular.LimeTabularExplainer(self.X_train.values ,class_names=self.class_names, feature_names = self.feature_names,
                                                    categorical_features=self.categorical_features_indexes, 
                                                    categorical_names=self.categorical_names, kernel_width=3, verbose=False)
@@ -225,6 +226,7 @@ class TabularClassification(Classification):
         return average_time_lime
     
     def get_average_explanation_shap(self):
+        # print("shap")
         average_time_shap = defaultdict(int)
         for label,pipeline in self.pipelines.items():
             pipeline_predict_fn = self.get_pipeline_predicfn(pipeline,probability=True)
@@ -241,6 +243,7 @@ class TabularClassification(Classification):
         return average_time_shap
     
     def get_average_explanation_anchor(self):
+        # print("anchor")
         explainer = anchor_tabular.AnchorTabularExplainer(
             self.class_names,
             self.feature_names,
@@ -275,6 +278,8 @@ class TabularClassification(Classification):
 
         with open(f'{average_path}/{self.dataset_name}.json', "w") as outfile:
             json.dump(average_times, outfile)
+        
+        print(f"Done for {self.dataset_name}")
         return average_times
     
 
