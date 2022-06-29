@@ -2,6 +2,7 @@ from collections import defaultdict
 import json
 import sklearn
 import pandas as pd
+import numpy as np
 from sklearn import pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -60,7 +61,10 @@ class TabularClassification(Classification):
         super().__init__(dataset_name,X,Y,class_names)
 
         #number of records to explain when measureing time
-        self.n = min(200,self.X_test.shape[0])
+        self.n = min(1,self.X_test.shape[0])
+
+        #data sampled from training dataset to measure faithfulness and average explaining time
+        sample_data = np.random.choice(range(self.X_train.shape[0]))
 
         #pipeline using the encoder and ml_algorithms 
         self.pipelines = {}
@@ -128,7 +132,7 @@ class TabularClassification(Classification):
         for label,pipeline in self.pipelines.items():
             start = time.perf_counter()
             pipeline_predict_fn = self.get_pipeline_predicfn(pipeline,probability=True)
-            exp = lime_explainer.explain_instance(row_to_explain.values, pipeline_predict_fn)
+            exp = lime_explainer.explain_instance(row_to_explain.values, pipeline_predict_fn,num_features=len(self.feature_names))
             feature_weight = exp.as_map() #weigths given by lime for features
             end = time.perf_counter()
             timer["lime"][f'{self.dataset_name} - {label}'] = end - start
@@ -172,6 +176,7 @@ class TabularClassification(Classification):
             timer["anchor"][f'{self.dataset_name} - {label}'] = end - start
 
             if output == True:
+                #TODO: save it as a json file instead of printing
                 print(f"{label} Anchor explanation")
                 print('Anchor: %s' % (' AND '.join(exp.names())))
                 print('Precision: %.2f' % exp.precision())
@@ -182,67 +187,51 @@ class TabularClassification(Classification):
             with open(f"Running_Time/explanation_time_{self.dataset_name}.json", "w") as outfile:
                 json.dump(timer, outfile)
         return timer
-    
-    def get_average_explanation_time_old(self):
-        total_timer = {
-                "lime": defaultdict(float),
-                "shap": defaultdict(float),
-                "anchor": defaultdict(float),
-            }
-        
-        n = 20
-        for i in range(n):
-            current_explanation_times = self.get_explanations(index_to_explain=i)
-            for explainer in current_explanation_times:
-                for label,current_time in current_explanation_times[explainer].items():
-                    total_timer[explainer][label] += current_time
-        
-        for explainer in total_timer:
-            for label,time in total_timer[explainer].items():
-                total_timer[explainer][label] /= n
-        
-        with open(f"Running_Time/explanation_time_{self.dataset_name}.json", "w") as outfile:
-                json.dump(total_timer, outfile)
-    
 
-    def get_average_explanation_lime(self):
-        # print("lime")
+    def get_lime_explanations(self):
         lime_explainer = lime_tabular.LimeTabularExplainer(self.X_train.values ,class_names=self.class_names, feature_names = self.feature_names,
                                                    categorical_features=self.categorical_features_indexes, 
                                                    categorical_names=self.categorical_names, kernel_width=3, verbose=False)
         average_time_lime = defaultdict(int)
+        lime_weights = defaultdict(int)
+
         for label,pipeline in self.pipelines.items():
             pipeline_predict_fn = self.get_pipeline_predicfn(pipeline,probability=True)
             for i in range(self.n):
                 row_to_explain = self.X_test.iloc[i]
                 start = time.perf_counter()
-                exp = lime_explainer.explain_instance(row_to_explain.values, pipeline_predict_fn)
+
+                exp = lime_explainer.explain_instance(row_to_explain.values, pipeline_predict_fn,num_features=len(self.feature_names))
                 feature_weight = exp.as_map() #weigths given by lime for features
+                lime_weights[label] = feature_weight
+
                 end = time.perf_counter()
                 average_time_lime[label] += end - start
         
         for label in self.pipelines:
             average_time_lime[label] /= self.n
-        return average_time_lime
+        
+        return average_time_lime,lime_weights
     
-    def get_average_explanation_shap(self):
-        # print("shap")
+    def get_shap_explanations(self):
         average_time_shap = defaultdict(int)
+        shap_values = defaultdict(int)
+
         for label,pipeline in self.pipelines.items():
             pipeline_predict_fn = self.get_pipeline_predicfn(pipeline,probability=True)
             k_explainer = shap.KernelExplainer(pipeline_predict_fn, self.X_train)
             for i in range(self.n):
                 row_to_explain = self.X_test.iloc[i]
                 start = time.perf_counter()
-                shap_values = k_explainer.shap_values(row_to_explain)
+                shap_values[label] = label_shap_values = k_explainer.shap_values(row_to_explain)[1]
                 end = time.perf_counter()
                 average_time_shap[label] = end - start
         
         for label in self.pipelines:
             average_time_shap[label] /= self.n
-        return average_time_shap
+        return average_time_shap,shap_values
     
-    def get_average_explanation_anchor(self):
+    def get_anchor_explanation(self):
         # print("anchor")
         explainer = anchor_tabular.AnchorTabularExplainer(
             self.class_names,
@@ -264,12 +253,11 @@ class TabularClassification(Classification):
             average_time_anchor[label] /= self.n
         return average_time_anchor 
 
-    
     def get_average_explanation_times(self):
         average_times = {
-            "lime" : self.get_average_explanation_lime(),
-            "shap" : self.get_average_explanation_shap(),
-            "anchor" : self.get_average_explanation_anchor(),
+            "lime" : self.get_lime_explanations(),
+            "shap" : self.get_shap_explanations(),
+            "anchor" : self.get_anchor_explanation(),
         }
 
         average_path = "Average_time"
@@ -281,6 +269,78 @@ class TabularClassification(Classification):
         
         print(f"Done for {self.dataset_name}")
         return average_times
+    
+    def calculate_lime_faithfullness(self):
+        lime_faithfulness = defaultdict(int)
+        shap_faithfulness = defaultdict(int)
+
+        _,lime_weights = self.get_lime_explanations()
+        _,shap_vals = self.get_shap_explanations()
+        
+
+        for label in self.pipelines:
+            exp_list = lime_weights[label][1]
+            exp_list = sorted(exp_list, key=lambda x: x[0])
+            label_lime_weights = np.array([x[1] for x in exp_list])
+            x = self.X_test.iloc[ind]
+            
+            
+            #mean values to simulate removing a feature
+            base = np.mean(self.X_train,axis=0)
+
+            #use modes instead of mean for categorical data to simulate removing
+            for categorical in self.categorical_features:
+                categorical_index = self.feature_names.index(categorical)
+                unique_vals,counts = np.unique(self.X_train[categorical], return_counts=True)
+                mode_index = np.argmax(counts)
+                base[categorical_index] = mode_index
+                 
+            
+            pipeline = self.pipelines[label]
+            pipeline_predict_fn = self.get_pipeline_predicfn(pipeline,probability=True)
+            pred_class = np.argmax(pipeline_predict_fn(x), axis=1)[0]
+            
+            #lime faithfulness
+            #find indexs of coefficients in decreasing order of value
+            ar = np.argsort(-label_lime_weights)  #argsort returns indexes of values sorted in increasing order; so do it for negated array
+            pred_probs = np.zeros(x.shape[0])
+            for ind in ar:
+                x_copy = x.copy(deep=True)
+                x_copy.iloc[ind] = base.iloc[ind]
+                x_copy_pr = pipeline_predict_fn(x_copy)
+                pred_probs[ind] = x_copy_pr[0][pred_class]
+
+            lime_faithfulness[label] = np.corrcoef(range(x.shape[0]), pred_probs)[0,1]
+            # print(label,np.corrcoef(range(x.shape[0]), pred_probs)[0,1])
+            # print(label_lime_weights)
+            # print(pred_probs)
+
+
+            # #shap faithfulness
+            label_shap_vals = np.array(shap_vals[label])
+            ar = np.argsort(-label_shap_vals)
+            pred_probs = np.zeros(x.shape[0])
+            for ind in ar:
+                x_copy = x.copy(deep=True)
+                x_copy.iloc[ind] = base.iloc[ind]
+                x_copy_pr = pipeline_predict_fn(x_copy)
+                pred_probs[ind] = x_copy_pr[0][pred_class]
+
+            # print(label_shap_vals)
+            shap_faithfulness[label] = np.corrcoef(label_shap_vals,pred_probs)[0,1]
+            print(label,shap_faithfulness[label])
+            
+
+
+        return lime_faithfulness,shap_faithfulness
+    
+    # /Users/kiduswondimgagegnehu/Documents/IT/AURA/Running_Time
+
+        
+        
+
+
+
     
 
         
