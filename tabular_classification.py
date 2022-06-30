@@ -1,3 +1,4 @@
+from cmath import nan
 from collections import defaultdict
 import json
 import sklearn
@@ -69,6 +70,11 @@ class TabularClassification(Classification):
         #pipeline using the encoder and ml_algorithms 
         self.pipelines = {}
 
+        #setting up explainers
+        self.lime_explainer = lime_tabular.LimeTabularExplainer(self.X_train.values ,class_names=self.class_names, feature_names = self.feature_names,
+                                                   categorical_features=self.categorical_features_indexes, 
+                                                   categorical_names=self.categorical_names, kernel_width=3, verbose=False)
+
         self.load_models()
     
     def load_models(self):
@@ -107,8 +113,18 @@ class TabularClassification(Classification):
                 return pipeline.predict(pdf)
             return pipeline.predict_proba(pdf)
         return format_and_predict
+
+    def get_lime_explanation(self,index_to_explain,pipeline_predict_fn):
+        row_to_explain = self.X_test.iloc[index_to_explain].values
+        exp = self.lime_explainer.explain_instance(row_to_explain,pipeline_predict_fn)
+        exp.save_to_file("lime.html")
         
 
+        exp_list = exp.as_map()[1]
+        exp_list = sorted(exp_list, key=lambda x: x[0])
+        exp_weight = [x[1] for x in exp_list]
+        return np.array(exp_weight)
+        
     def get_explanations(self,index_to_explain = 10,output=False):
         """
         Explains blackbox models and measure the time taken for the explainers
@@ -274,64 +290,85 @@ class TabularClassification(Classification):
         lime_faithfulness = defaultdict(int)
         shap_faithfulness = defaultdict(int)
 
-        _,lime_weights = self.get_lime_explanations()
-        _,shap_vals = self.get_shap_explanations()
+        base = np.mean(self.X_train,axis=0)
+        # _,lime_weights = self.get_lime_explanations()
+        # _,shap_vals = self.get_shap_explanations()
         
-
-        for label in self.pipelines:
-            exp_list = lime_weights[label][1]
-            exp_list = sorted(exp_list, key=lambda x: x[0])
-            label_lime_weights = np.array([x[1] for x in exp_list])
-            x = self.X_test.iloc[ind]
-            
-            
-            #mean values to simulate removing a feature
-            base = np.mean(self.X_train,axis=0)
-
-            #use modes instead of mean for categorical data to simulate removing
-            for categorical in self.categorical_features:
-                categorical_index = self.feature_names.index(categorical)
-                unique_vals,counts = np.unique(self.X_train[categorical], return_counts=True)
-                mode_index = np.argmax(counts)
-                base[categorical_index] = mode_index
-                 
-            
-            pipeline = self.pipelines[label]
+        self.n = 30
+        for label,pipeline in self.pipelines.items():
             pipeline_predict_fn = self.get_pipeline_predicfn(pipeline,probability=True)
-            pred_class = np.argmax(pipeline_predict_fn(x), axis=1)[0]
+            positive_count = 0
+            for ind in range(self.n):
+                x = self.X_test.iloc[ind]
+                pred_class = np.argmax(pipeline_predict_fn(x), axis=1)[0]
+                if pred_class == 1:
+                    positive_count += 1
+                    #mean values to simulate removing a feature
+                    #use modes instead of mean for categorical data to simulate removing
+                    for categorical in self.categorical_features:
+                        categorical_index = self.feature_names.index(categorical)
+                        unique_vals,counts = np.unique(self.X_train[categorical], return_counts=True)
+                        mode_index = np.argmax(counts)
+                        base[categorical_index] = mode_index
+                        
+                    
+                    label_lime_weights = self.get_lime_explanation(ind,pipeline_predict_fn)
+                    # print("RF prediction",pipeline_predict_fn(x))
+                    # print("Prediction class",np.argmax(pipeline_predict_fn(x), axis=1)[0])               
+                    #lime faithfulness
+                    #find indexs of coefficients in decreasing order of value
+                    ar = np.argsort(-label_lime_weights)  #argsort returns indexes of values sorted in increasing order; so do it for negated array
+                    positive_weight_index = []
+                    pred_probs = np.zeros(x.shape[0])
+                    for ind in ar:
+                        if label_lime_weights[ind] >= 0:
+                            positive_weight_index.append(ind)
+                        x_copy = x.copy(deep=True)
+                        x_copy.iloc[ind] = base.iloc[ind]
+                        x_copy_pr = pipeline_predict_fn(x_copy)
+                        pred_probs[ind] = x_copy_pr[0][pred_class]
+                        # print(label_lime_weights[ind],pred_probs[ind])
+
+                    positive_weight_predictions = [0] * len(positive_weight_index)
+                    positive_weights = [0] * len(positive_weight_index) 
+
+                    for ind,idx in enumerate(positive_weight_index):
+                        positive_weight_predictions[ind] = pred_probs[idx]
+                        positive_weights[ind] = label_lime_weights[idx]
+
+                    # print(positive_weights)
+                    # print(positive_weight_predictions)
+                    # print(-np.corrcoef(positive_weights, positive_weight_predictions)[0,1])
+                    # return
+
+                    lime_faithfulness[label] += -np.corrcoef(positive_weights, positive_weight_predictions)[0,1] 
+                    # print(label,np.corrcoef(range(x.shape[0]), pred_probs)[0,1])
+                    # print(label_lime_weights)
+                    # print(pred_probs)
+                    
+
+
+                    # #shap faithfulness
+                    # label_shap_vals = shap_vals[label]
+                    # label_shap_vals = np.array(list(filter(lambda x: x > 0, label_shap_vals)))
+
+                    # ar = np.argsort(-label_shap_vals)
+                    # pred_probs = np.zeros(label_shap_vals.shape[0])
+                    # for ind in ar:
+                    #     x_copy = x.copy(deep=True)
+                    #     x_copy.iloc[ind] = base.iloc[ind]
+                    #     x_copy_pr = pipeline_predict_fn(x_copy)
+                    #     pred_probs[ind] = x_copy_pr[0][pred_class]
+
+                    # corr_coff = np.corrcoef(label_shap_vals,pred_probs)[0,1]
+                    # if np.isnan(corr_coff):
+                    #     corr_coff = 0
+                    # shap_faithfulness[label] += corr_coff / self.n
+                    # print(label,shap_faithfulness[label])
+                    # # print(pred_probs)
             
-            #lime faithfulness
-            #find indexs of coefficients in decreasing order of value
-            ar = np.argsort(-label_lime_weights)  #argsort returns indexes of values sorted in increasing order; so do it for negated array
-            pred_probs = np.zeros(x.shape[0])
-            for ind in ar:
-                x_copy = x.copy(deep=True)
-                x_copy.iloc[ind] = base.iloc[ind]
-                x_copy_pr = pipeline_predict_fn(x_copy)
-                pred_probs[ind] = x_copy_pr[0][pred_class]
-
-            lime_faithfulness[label] = np.corrcoef(range(x.shape[0]), pred_probs)[0,1]
-            # print(label,np.corrcoef(range(x.shape[0]), pred_probs)[0,1])
-            # print(label_lime_weights)
-            # print(pred_probs)
-
-
-            # #shap faithfulness
-            label_shap_vals = np.array(shap_vals[label])
-            ar = np.argsort(-label_shap_vals)
-            pred_probs = np.zeros(x.shape[0])
-            for ind in ar:
-                x_copy = x.copy(deep=True)
-                x_copy.iloc[ind] = base.iloc[ind]
-                x_copy_pr = pipeline_predict_fn(x_copy)
-                pred_probs[ind] = x_copy_pr[0][pred_class]
-
-            # print(label_shap_vals)
-            shap_faithfulness[label] = np.corrcoef(label_shap_vals,pred_probs)[0,1]
-            print(label,shap_faithfulness[label])
-            
-
-
+            lime_faithfulness[label] /= positive_count
+        print(lime_faithfulness)
         return lime_faithfulness,shap_faithfulness
     
     # /Users/kiduswondimgagegnehu/Documents/IT/AURA/Running_Time
