@@ -5,7 +5,7 @@ from tabular_classification import TabularClassification
 import numpy as np
 
 
-# # # ##titanic_dataset
+# # ##titanic_dataset
 # data = pd.read_csv("./datasets/titanic.csv")
 
 # #data clean up
@@ -28,35 +28,37 @@ import numpy as np
 # categorical_features = ["Pclass","Sex","Parch","Embarked","Deck"]
 
 # titanic_dataset = TabularClassification(dataset_name="Titanic",X=data[features],Y=data.Survived,feature_names=features,class_names=class_names,categorical_features=categorical_features)
-# # titanic_dataset.get_explanations(output=True)
-# # titanic_dataset.get_average_explanation_times()
+# titanic_dataset.get_explanations(output=True)
+# titanic_dataset.get_average_explanation_times()
 # titanic_dataset.calculate_lime_faithfullness()
 
 
 
 #cancer_dataset
-data = pd.read_csv("./datasets/cancer.csv")
-data = data.drop(columns=["id"])
-data = data.drop('Unnamed: 32', axis=1)
+# data = pd.read_csv("./datasets/cancer.csv")
+# data = data.drop(columns=["id"])
+# data = data.drop('Unnamed: 32', axis=1)
 
-X = data.drop(columns=['diagnosis'])
-Y = data['diagnosis'].map({'B':0,'M':1})
+# X = data.drop(columns=['diagnosis'])
+# Y = data['diagnosis'].map({'B':0,'M':1})
 
-class_names = ["Benign","Malignant"]
-feature_names = list(X.columns)
+# class_names = ["Benign","Malignant"]
+# feature_names = list(X.columns)
 
-cancer_dataset = TabularClassification(dataset_name="Cancer",X=X,Y=Y,feature_names=feature_names,class_names=class_names)
-# cancer_dataset.get_average_explanation_times()
+# cancer_dataset = TabularClassification(dataset_name="Cancer",X=X,Y=Y,feature_names=feature_names,class_names=class_names)
+# # cancer_dataset.get_average_explanation_times()
 # cancer_dataset.get_explanations(output=True)
-cancer_dataset.calculate_lime_faithfullness()
+# # cancer_dataset.calculate_lime_faithfullness()
 
 
-# # wine_dataset
+# wine_dataset
 # wine_data = load_wine()
 # df = pd.DataFrame(wine_data.data, columns=wine_data.feature_names)
 # wine_dataset = TabularClassification(dataset_name="wine",X=df,Y=wine_data.target,feature_names=wine_data.feature_names,class_names=list(wine_data.target_names))
 # # wine_dataset.get_average_explanation_times()
-# wine_dataset.calculate_faithfullness()
+# # wine_dataset.calculate_lime_faithfullness()
+# wine_dataset.get_explanations(output=True)
+
 
 
 # #iris_flower
@@ -69,24 +71,27 @@ cancer_dataset.calculate_lime_faithfullness()
 # iris_features.remove(prediction_feature)
 # iris_dataset = TabularClassification(dataset_name="iris",X=data[iris_features],Y=data[prediction_feature],feature_names=iris_features,class_names=iris_class_names)
 # # iris_dataset.get_average_explanation_times()
-# iris_dataset.calculate_faithfullness()
+# # iris_dataset.calculate_lime_faithfullness()
+# iris_dataset.get_explanations(output=True)
 
 
 #loan
-# data = pd.read_csv("./datasets/loan.csv")
-# Y = data['Loan_Status'].map({"N":0,"Y":1})
-# data.drop(["Loan_Status","Loan_ID"],axis=1,inplace=True)
+data = pd.read_csv("./datasets/loan.csv")
+Y = data['Loan_Status'].map({"N":0,"Y":1})
+data.drop(["Loan_Status","Loan_ID"],axis=1,inplace=True)
 
-# for col in data.columns:
-#     if data[col].isnull().sum() != 0:
-#         data[col].fillna(data[col].value_counts().idxmax(),inplace = True)
+for col in data.columns:
+    if data[col].isnull().sum() != 0:
+        data[col].fillna(data[col].value_counts().idxmax(),inplace = True)
 
-# loan_features = data.columns
-# loan_categorical_features = [col for col in data.columns if data[col].dtype == "object"]
-# loan_class_names = ["Loan_Denied","Loan_Approved"]
-# loan_dataset = TabularClassification(dataset_name="loan",X=data,Y=Y,feature_names=data.columns,class_names=loan_class_names,categorical_features=loan_categorical_features)
-# # loan_dataset.get_explanations(output=True)
+loan_features = list(data.columns)
+# print(loan_features)
+loan_categorical_features = [col for col in data.columns if data[col].dtype == "object"]
+loan_class_names = ["Loan_Denied","Loan_Approved"]
+loan_dataset = TabularClassification(dataset_name="loan",X=data,Y=Y,feature_names=loan_features,class_names=loan_class_names,categorical_features=loan_categorical_features)
+loan_dataset.get_explanations(output=True)
 # loan_dataset.get_average_explanation_times()
+# loan_dataset.calculate_lime_faithfullness()
 
 
 #Diabetes_dataset
@@ -97,7 +102,7 @@ cancer_dataset.calculate_lime_faithfullness()
 # diabetes_dataset = TabularClassification(dataset_name="Diabetes",X=data[diabetes_features],Y=Y,feature_names=diabetes_features,class_names=diabetes_class_names)
 # # diabetes_dataset.get_explanations(output=True)
 # # diabetes_dataset.get_average_explanation_times()
-# diabetes_dataset.calculate_faithfullness()
+# diabetes_dataset.calculate_lime_faithfullness()
 
 
 

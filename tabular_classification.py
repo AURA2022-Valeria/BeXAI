@@ -116,8 +116,8 @@ class TabularClassification(Classification):
 
     def get_lime_explanation(self,index_to_explain,pipeline_predict_fn):
         row_to_explain = self.X_test.iloc[index_to_explain].values
-        exp = self.lime_explainer.explain_instance(row_to_explain,pipeline_predict_fn)
-        exp.save_to_file("lime.html")
+        exp = self.lime_explainer.explain_instance(row_to_explain,pipeline_predict_fn,num_features=len(self.feature_names))
+        # exp.save_to_file("lime.html")
         
 
         exp_list = exp.as_map()[1]
@@ -148,7 +148,7 @@ class TabularClassification(Classification):
         for label,pipeline in self.pipelines.items():
             start = time.perf_counter()
             pipeline_predict_fn = self.get_pipeline_predicfn(pipeline,probability=True)
-            exp = lime_explainer.explain_instance(row_to_explain.values, pipeline_predict_fn,num_features=len(self.feature_names))
+            exp = lime_explainer.explain_instance(row_to_explain.values, pipeline_predict_fn,num_features=min(6,len(self.feature_names)),top_labels=1)
             feature_weight = exp.as_map() #weigths given by lime for features
             end = time.perf_counter()
             timer["lime"][f'{self.dataset_name} - {label}'] = end - start
@@ -192,8 +192,8 @@ class TabularClassification(Classification):
             timer["anchor"][f'{self.dataset_name} - {label}'] = end - start
 
             if output == True:
-                #TODO: save it as a json file instead of printing
                 print(f"{label} Anchor explanation")
+                exp.save_to_file(f'{path}/anchor_{label}.html')
                 print('Anchor: %s' % (' AND '.join(exp.names())))
                 print('Precision: %.2f' % exp.precision())
                 print('Coverage: %.2f' % exp.coverage())
@@ -286,18 +286,33 @@ class TabularClassification(Classification):
         print(f"Done for {self.dataset_name}")
         return average_times
     
+    def measure_monotonicity(self,pred_prob):
+        n = len(pred_prob)
+        inc,dec = 0,0
+        for i in range(1,n):
+            if pred_prob[i] > pred_prob[i - 1]:
+                inc += 1
+            elif pred_prob[i] < pred_prob[i - 1]:
+                dec += 1
+        return inc,dec
+    
     def calculate_lime_faithfullness(self):
         lime_faithfulness = defaultdict(int)
         shap_faithfulness = defaultdict(int)
+
+        lime_monotonicity = defaultdict(int)
+
 
         base = np.mean(self.X_train,axis=0)
         # _,lime_weights = self.get_lime_explanations()
         # _,shap_vals = self.get_shap_explanations()
         
-        self.n = 30
+        self.n = 20
         for label,pipeline in self.pipelines.items():
             pipeline_predict_fn = self.get_pipeline_predicfn(pipeline,probability=True)
             positive_count = 0
+            lime_inc,lime_dec = 1,1
+
             for ind in range(self.n):
                 x = self.X_test.iloc[ind]
                 pred_class = np.argmax(pipeline_predict_fn(x), axis=1)[0]
@@ -320,6 +335,8 @@ class TabularClassification(Classification):
                     ar = np.argsort(-label_lime_weights)  #argsort returns indexes of values sorted in increasing order; so do it for negated array
                     positive_weight_index = []
                     pred_probs = np.zeros(x.shape[0])
+                    monotonicity_probs = []
+
                     for ind in ar:
                         if label_lime_weights[ind] >= 0:
                             positive_weight_index.append(ind)
@@ -327,6 +344,7 @@ class TabularClassification(Classification):
                         x_copy.iloc[ind] = base.iloc[ind]
                         x_copy_pr = pipeline_predict_fn(x_copy)
                         pred_probs[ind] = x_copy_pr[0][pred_class]
+                        monotonicity_probs.append(pred_probs[ind])
                         # print(label_lime_weights[ind],pred_probs[ind])
 
                     positive_weight_predictions = [0] * len(positive_weight_index)
@@ -340,8 +358,11 @@ class TabularClassification(Classification):
                     # print(positive_weight_predictions)
                     # print(-np.corrcoef(positive_weights, positive_weight_predictions)[0,1])
                     # return
+                    lime_faithfulness[label] += -np.corrcoef(label_lime_weights, pred_probs)[0,1] 
 
-                    lime_faithfulness[label] += -np.corrcoef(positive_weights, positive_weight_predictions)[0,1] 
+                    increase,decrease = self.measure_monotonicity(monotonicity_probs)
+                    lime_inc += increase
+                    lime_dec += decrease
                     # print(label,np.corrcoef(range(x.shape[0]), pred_probs)[0,1])
                     # print(label_lime_weights)
                     # print(pred_probs)
@@ -368,7 +389,10 @@ class TabularClassification(Classification):
                     # # print(pred_probs)
             
             lime_faithfulness[label] /= positive_count
-        print(lime_faithfulness)
+            lime_monotonicity[label] = lime_inc / (lime_inc + lime_dec)
+        # print(lime_faithfulness)
+
+        print(lime_monotonicity)
         return lime_faithfulness,shap_faithfulness
     
     # /Users/kiduswondimgagegnehu/Documents/IT/AURA/Running_Time
