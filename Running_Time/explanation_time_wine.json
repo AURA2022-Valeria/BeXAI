@@ -1,1 +1,23 @@
-{"lime": {"wine - random_forest": 1.9119014170000006, "wine - knn": 2.015274625, "wine - MLP": 1.9927787499999994, "wine - decision_tree": 1.9713307919999998, "wine - xgboost": 1.995473916}, "shap": {"wine - random_forest": 1.0920166659999992, "wine - knn": 0.5823732079999999, "wine - MLP": 1.133294708000001, "wine - decision_tree": 0.40187083300000026, "wine - xgboost": 0.5060077920000019}, "anchor": {"wine - random_forest": 1.8150312500000005, "wine - knn": 0.334318083000003, "wine - MLP": 0.27467754199999916, "wine - decision_tree": 0.1932157090000004, "wine - xgboost": 0.6938539580000018}}
+{
+    "lime": {
+        "wine - random_forest": 1.9119014170000006,
+        "wine - knn": 2.015274625,
+        "wine - MLP": 1.9927787499999994,
+        "wine - decision_tree": 1.9713307919999998,
+        "wine - xgboost": 1.995473916
+    },
+    "shap": {
+        "wine - random_forest": 1.0920166659999992,
+        "wine - knn": 0.5823732079999999,
+        "wine - MLP": 1.133294708000001,
+        "wine - decision_tree": 0.40187083300000026,
+        "wine - xgboost": 0.5060077920000019
+    },
+    "anchor": {
+        "wine - random_forest": 1.8150312500000005,
+        "wine - knn": 0.334318083000003,
+        "wine - MLP": 0.27467754199999916,
+        "wine - decision_tree": 0.1932157090000004,
+        "wine - xgboost": 0.6938539580000018
+    }
+}
