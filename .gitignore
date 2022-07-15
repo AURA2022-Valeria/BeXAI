@@ -1,13 +1,13 @@
-env
-.ipynb_checkpoints
-datasets
+env/
+.ipynb_checkpoints/
+datasets/
 
 #models saved after training
-models
+models/
 
 explanations/
 mnist/
 Average_time/
 explanations/
-Running
-.DS_Store
+Running/
+.DS_Store/
