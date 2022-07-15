@@ -103,18 +103,21 @@ elif selected_dataset_title == "reddit":
     selected_dataset = TextClassification(dataset_name="Reddit",X=X,Y=Y,class_names=reddit_class_names)
 
 
+if args.explain and args.evaluation:
+    sys.exit("Invalid command")
 
-if (not args.explain and not args.evaluation) or (args.evaluation and args.evaluation.lower() == "fidelity" and selected_dataset_title in Tabular):
-    fidelity_scores = selected_dataset.calculate_explainers_faithfullness()
-    print(f"Fidelity scores of the explainers over the {selected_dataset_title} dataset")
-    print(fidelity_scores)
-if (not args.explain and not args.evaluation) or (args.evaluation and args.evaluation.lower() == "runtime"):
-    print(f"Runtime of the explainers over the {selected_dataset_title} dataset")
-    runtime = selected_dataset.get_average_explanation_times()
-    print(runtime)
-
-
-if args.explain:
+if not args.explain:
+    #benchmarking
+    if not args.evaluation or args.evaluation == "fidelity" and selected_dataset_title in Tabular:
+        fidelity_scores = selected_dataset.calculate_explainers_faithfullness()
+        print(f"Fidelity scores of the explainers over the {selected_dataset_title} dataset")
+        print(fidelity_scores)
+    if not args.evaluation or args.evaluation == "runtime":
+        print(f"Runtime of the explainers over the {selected_dataset_title} dataset")
+        runtime = selected_dataset.get_average_explanation_times()
+        print(runtime)
+else:
+    #explaining an instance
     selected_dataset.get_explanations(index_to_explain=args.explain,output=True)
 
 
