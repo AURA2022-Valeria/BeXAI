@@ -56,11 +56,13 @@ elif selected_dataset_title == "titanic":
     class_names = ["No","Yes"]
     categorical_features = ["Pclass","Sex","Parch","Embarked","Deck"]
     selected_dataset = TabularClassification(dataset_name="Titanic",X=data[features],Y=data.Survived,feature_names=features,class_names=class_names,categorical_features=categorical_features)
+
 elif selected_dataset_title == "wine":
     # wine_dataset
     wine_data = load_wine()
     df = pd.DataFrame(wine_data.data, columns=wine_data.feature_names)
     selected_dataset = TabularClassification(dataset_name="Wine",X=df,Y=wine_data.target,feature_names=wine_data.feature_names,class_names=list(wine_data.target_names))
+
 elif selected_dataset_title == "iris":
     #iris_flower
     data = pd.read_csv("./datasets/iris.csv")
@@ -71,6 +73,7 @@ elif selected_dataset_title == "iris":
     prediction_feature = "variety"
     iris_features.remove(prediction_feature)
     selected_dataset = TabularClassification(dataset_name="Iris",X=data[iris_features],Y=data[prediction_feature],feature_names=iris_features,class_names=iris_class_names)
+
 elif selected_dataset_title == "loan":
     #loan
     data = pd.read_csv("./datasets/loan.csv")
@@ -85,6 +88,7 @@ elif selected_dataset_title == "loan":
     loan_categorical_features = [col for col in data.columns if data[col].dtype == "object"]
     loan_class_names = ["Loan_Denied","Loan_Approved"]
     selected_dataset = TabularClassification(dataset_name="Loan",X=data,Y=Y,feature_names=loan_features,class_names=loan_class_names,categorical_features=loan_categorical_features)
+
 elif selected_dataset_title == "diabetes":
     #Diabetes_dataset
     data = pd.read_csv("./datasets/diabetes.csv")
@@ -92,6 +96,7 @@ elif selected_dataset_title == "diabetes":
     diabetes_features = ["Pregnancies","Glucose","BloodPressure","SkinThickness","Insulin","BMI","DiabetesPedigreeFunction","Age"]
     diabetes_class_names = ["Negative","Positive"]
     selected_dataset = TabularClassification(dataset_name="Diabetes",X=data[diabetes_features],Y=Y,feature_names=diabetes_features,class_names=diabetes_class_names)
+
 elif selected_dataset_title == "reddit":
     #reddit_dataset
     data = pd.read_csv("./datasets/reddit.csv")
@@ -109,7 +114,7 @@ if args.explain and args.evaluation:
 if not args.explain:
     #benchmarking
     if not args.evaluation or args.evaluation == "fidelity" and selected_dataset_title in Tabular:
-        fidelity_scores = selected_dataset.calculate_explainers_faithfullness()
+        fidelity_scores = selected_dataset.calculate_explainers_fidelity()
         print(f"Fidelity scores of the explainers over the {selected_dataset_title} dataset")
         print(fidelity_scores)
     if not args.evaluation or args.evaluation == "runtime":
