@@ -9,5 +9,6 @@ explanations/
 mnist/
 Average_time/
 explanations/
-Running_Time/
+run_time
+fidelity/
 .DS_Store
