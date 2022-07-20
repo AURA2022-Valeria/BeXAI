@@ -19,9 +19,9 @@ Explainers are evaluated based on the following two quantitative attributes.
 Install the required dependencies in requirement.txt using the following command
 
 ```bash
-python3 -m venv bin 
+python3 -m venv env 
 source env/bin/activate
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 Download the datasets zip file from [here](https://drive.google.com/file/d/1YBCa4VltDhoXxhOmrRw-35RDT7vnhyyC/view?usp=sharing). After extracting it, inlcude the datasets folder in the main directory of the project.
