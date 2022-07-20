@@ -37,7 +37,7 @@ class TextClassification(Classification):
         self.X_test_vectorized  = self.tfidf.transform(self.X_test)
 
         #number of records to explain when measuring runtime
-        self.n = min(3,self.X_test.shape[0])
+        self.n = min(10,self.X_test.shape[0])
 
         self._load_models()
 
@@ -56,18 +56,10 @@ class TextClassification(Classification):
                 pickle.dump(self.models[label], open(model_file_path, "wb")) #save the trained model inorder not to train it again
                 
 
-    def get_explanations(self,output=False):
+    def get_explanations(self,output=False,index_to_explain = 10):
         """
-        Generates explanation for an instance in the test data
+        Generates a graphical explanation for an instance in the test data
         """
-        #TODO: modularize the time measurement 
-        index_to_explain = 10
-        timer = {
-            "lime" : {},
-            "shap" : {},
-            "anchor" : {},
-        }
-        
         row_to_explain = self.X_test[index_to_explain]  
 
         #lime explanation
@@ -86,10 +78,7 @@ class TextClassification(Classification):
         #shap explanation
         row_to_explain = self.X_test_vectorized[index_to_explain]
 
-        sampling_time_start = time.perf_counter()
         X_train_sample = shap.kmeans(self.X_train_vectorized, 30)
-        sampling_time_end = time.perf_counter()
-        timer["shap_sampling_time"] = sampling_time_end - sampling_time_start
 
         for label,model in self.models.items():
             predict_fn = lambda X: model.predict(X)

@@ -1,4 +1,3 @@
-from cmath import nan
 from collections import defaultdict
 import json
 import sklearn
@@ -31,10 +30,15 @@ import time
 from classification import Classification
 
 class TabularClassification(Classification):
-    #TODO : divide the class to regreesion and classification datasets 
-    #TODO : the test_size can be passed as a parameter. should it?
-    
     def __init__(self,dataset_name,X,Y,feature_names,class_names,categorical_features=[]):
+        """
+        dataset_name : unique name to the dataset
+        X : columns containing data
+        Y : column to be predicted
+        class_names : name of classes/labels on the dataset
+        feature_names : list of columns in the dataset used to train models
+        categorical features : list of features that are not continous or categorical
+        """
         self.feature_names = feature_names
         self.categorical_features = categorical_features
         self.categorical_features_indexes = [X.columns.get_loc(feature) for feature in categorical_features] #array of indexes of categorical features
@@ -63,7 +67,6 @@ class TabularClassification(Classification):
 
         #number of records to explain when measuring runtime
         self.n = min(1,self.X_test.shape[0])
-
 
         #pipelines using the encoder and ml_algorithms 
         self.pipelines = {}
@@ -127,7 +130,7 @@ class TabularClassification(Classification):
         exp_list = exp[prediction]
         return exp_list
     
-    def get_shap_explanation(self,index_to_explain,shap_explainer,):
+    def get_shap_explanation(self,index_to_explain,shap_explainer):
         row_to_explain = self.X_test.iloc[index_to_explain]
         shap_vals = shap_explainer.shap_values(row_to_explain)
         return shap_vals
@@ -139,13 +142,10 @@ class TabularClassification(Classification):
         return exp.names()
 
         
-    def get_explanations(self,index_to_explain = 10,output=False):
+    def get_explanations(self,index_to_explain = 10):
         """
         Generates explanation for an instance in the test data
         """
-        #TODO: modularize the time measurement 
-        #TODO: Should graph representation be included in time measurements?
-
         row_to_explain = self.X_test.iloc[index_to_explain]
         
         #lime explanation
@@ -158,11 +158,10 @@ class TabularClassification(Classification):
             exp = lime_explainer.explain_instance(row_to_explain.values, pipeline_predict_fn,num_features=min(6,len(self.feature_names)),top_labels=1)
             # lim_feature_weight = exp.as_map() #weigths given by lime for features
             
-            if output == True:
-                path = f'Explanations/{self.dataset_name}'
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                exp.save_to_file(f'{path}/lime_{label}.html')
+            path = f'Explanations/{self.dataset_name}'
+            if not os.path.exists(path):
+                os.makedirs(path)
+            exp.save_to_file(f'{path}/lime_{label}.html')
     
 
         #shap explanation
@@ -171,13 +170,12 @@ class TabularClassification(Classification):
             pred_class = np.argmax(pipeline_predict_fn(row_to_explain), axis=1)[0]
             k_explainer = shap.KernelExplainer(pipeline_predict_fn, self.X_train)
             shap_values = k_explainer.shap_values(row_to_explain)
-            if output == True:
-                path = f'Explanations/{self.dataset_name}'
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                shap.initjs()
-                figure = shap.force_plot(k_explainer.expected_value[pred_class], shap_values[pred_class], row_to_explain,matplotlib = True, show = False)
-                figure.savefig(f'{path}/shap_{label}.png')
+            path = f'Explanations/{self.dataset_name}'
+            if not os.path.exists(path):
+                os.makedirs(path)
+            shap.initjs()
+            figure = shap.force_plot(k_explainer.expected_value[pred_class], shap_values[pred_class], row_to_explain,matplotlib = True, show = False)
+            figure.savefig(f'{path}/shap_{label}.png')
 
         #anchor explanation
         explainer = anchor_tabular.AnchorTabularExplainer(
@@ -190,15 +188,14 @@ class TabularClassification(Classification):
             pipeline_predict_fn = self._get_pipeline_predicfn(pipeline,probability=False)
             exp = explainer.explain_instance(row_to_explain.values, pipeline_predict_fn, threshold=0.8)
 
-            if output == True:
-                try:
-                    exp.save_to_file(f'{path}/anchor_{label}.html')
-                except:
-                    print("Couldn't generate html for anchor")
-                    print(f"{label} Anchor explanation")
-                    print('Anchor: %s' % (' AND '.join(exp.names())))
-                    print('Precision: %.2f' % exp.precision())
-                    print('Coverage: %.2f' % exp.coverage())
+            try:
+                exp.save_to_file(f'{path}/anchor_{label}.html')
+            except:
+                print("Couldn't generate html for anchor")
+                print(f"{label} Anchor explanation")
+                print('Anchor: %s' % (' AND '.join(exp.names())))
+                print('Precision: %.2f' % exp.precision())
+                print('Coverage: %.2f' % exp.coverage())
 
 
     def get_average_runtime_explanation_lime(self):
@@ -288,6 +285,13 @@ class TabularClassification(Classification):
     def calculate_explainers_fidelity(self):
         """
         calculates fidelity scores of lime, shap and anchor over all models
+
+         This metric evaluates the correlation between the importance assigned by the interpretability algorithm
+        to attributes and the effect of each of the attributes on the performance of the predictive model.
+        The higher the importance, the higher should be the effect, and vice versa, The metric evaluates this by
+        incrementally removing each of the attributes deemed important by the interpretability metric, and
+        evaluating the effect on the performance, and then calculating the correlation between the weights (importance)
+        of the attributes and corresponding model performance. [#]_
         """
         lime_fidelity = defaultdict(int)
         shap_fidelity = defaultdict(int)
@@ -304,7 +308,7 @@ class TabularClassification(Classification):
             mode_index = np.argmax(counts)
             base[categorical_index] = mode_index
 
-        N = 5 #number of rows to calculcate fidelity on
+        N = 1 #number of rows to calculcate fidelity on
         for label,pipeline in self.pipelines.items():
             pipeline_probability_predict_fn = self._get_pipeline_predicfn(pipeline,probability=True)
             k_explainer = shap.KernelExplainer(pipeline_probability_predict_fn, self.X_train)
@@ -314,7 +318,6 @@ class TabularClassification(Classification):
                 pred_class = np.argmax(pipeline_probability_predict_fn(x), axis=1)[0]
                                
                 #lime fidelity
-                
                 lime_explanation = self.get_lime_explanation(index,pipeline_probability_predict_fn)
                 #find indexs of coefficients in decreasing order of value
                 exp_list = sorted(lime_explanation, key=lambda x: x[0])

@@ -5,6 +5,7 @@ from tabular_classification import TabularClassification
 
 import argparse
 import sys
+from mnist import mnist
 
 
 Tabular = ["titanic","cancer","iris","wine","diabetes","loan"]
@@ -22,9 +23,8 @@ if not args.dataset or args.dataset not in datasets:
     sys.exit("Invalid or none dataset selected")
 selected_dataset_title = args.dataset
 
-if args.evaluation and args.evaluation.lower() == "fidelity" and selected_dataset_title not in Tabular:
+if (args.evaluation and args.evaluation.lower() == "fidelity") and selected_dataset_title not in Tabular:
     sys.exit("Invalid metric for the selected dataset")
-
 
 if selected_dataset_title == "cancer":
     # cancer_dataset
@@ -107,13 +107,18 @@ elif selected_dataset_title == "reddit":
     Y = data['Topic'].values
     selected_dataset = TextClassification(dataset_name="Reddit",X=X,Y=Y,class_names=reddit_class_names)
 
+elif selected_dataset_title == "mnist":
+    #mnist
+    mnist.mnist_runtime()
+    sys.exit(0)
+
 
 if args.explain and args.evaluation:
     sys.exit("Invalid command")
 
 if not args.explain:
     #benchmarking
-    if not args.evaluation or args.evaluation == "fidelity" and selected_dataset_title in Tabular:
+    if not args.evaluation or args.evaluation == "fidelity":
         fidelity_scores = selected_dataset.calculate_explainers_fidelity()
         print(f"Fidelity scores of the explainers over the {selected_dataset_title} dataset")
         print(fidelity_scores)

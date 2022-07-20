@@ -39,11 +39,11 @@ class Classification:
     def __init__(self,dataset_name,X,Y,class_names):
         """
         dataset_name : unique name to the dataset
-        X : features of the dataset
+        X : columns containing data
         Y : column to be predicted
-        class_names : name of classes on classification dataset
-        feature_names : Name of columns in the dataset used to train models
-        categorical features : 
+        class_names : name of classes/labels on the dataset
+        feature_names : list of columns in the dataset used to train models
+        categorical features : list of features that are not continous or categorical
         """
         self.dataset_name = dataset_name
         self.X_train,self.X_test,self.Y_train,self.Y_test = train_test_split(X, Y,test_size=0.3, random_state=0)
