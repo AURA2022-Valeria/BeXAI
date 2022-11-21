@@ -46,14 +46,15 @@ class Classification:
         categorical features : list of features that are not continous or categorical
         """
         self.dataset_name = dataset_name
-        self.X_train,self.X_test,self.Y_train,self.Y_test = train_test_split(X, Y,test_size=0.3, random_state=0)
+        self.X_train,self.X_test,self.Y_train,self.Y_test = train_test_split(X, Y,test_size=0.3)
         self.class_names = class_names
-        self.models = {"random_forest" : RandomForestClassifier(), 
-                        "knn" : KNeighborsClassifier() , 
-                        "MLP" : MLPClassifier(hidden_layer_sizes=(120, 120,120), activation='relu', solver='lbfgs', max_iter=10000,alpha=1e-5,tol=1e-5), 
-                        "decision_tree" : DecisionTreeClassifier(), 
-                        "xgboost" : xgb.XGBClassifier(n_estimators=100, learning_rate=0.1, gamma=0, subsample=0.5,colsample_bytree=1, max_depth=8)
-                        }
+        self.models = {
+            "random_forest" : RandomForestClassifier(), 
+            "knn" : KNeighborsClassifier() , 
+            "MLP" : MLPClassifier(hidden_layer_sizes=(120, 120,120), activation='relu', solver='lbfgs', max_iter=10000,alpha=1e-5,tol=1e-5), 
+            "decision_tree" : DecisionTreeClassifier(), 
+            "xgboost" : xgb.XGBClassifier(n_estimators=100, learning_rate=0.1, gamma=0, subsample=0.5,colsample_bytree=1, max_depth=8)
+        }
 
 
     

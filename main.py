@@ -128,7 +128,7 @@ if not args.explain:
         print(runtime)
 else:
     #explaining an instance
-    selected_dataset.get_explanations(index_to_explain=args.explain,output=True)
+    selected_dataset.get_explanations(index_to_explain=args.explain)
 
 
 

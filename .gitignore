@@ -6,7 +6,6 @@ datasets/
 models/
 
 explanations/
-mnist/
 Average_time/
 explanations/
 run_time
